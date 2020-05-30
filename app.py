@@ -2,6 +2,7 @@
 from flask import Flask, render_template, request
 from bokeh.plotting import figure, show
 from bokeh.embed import components
+from bokeh.models import ColumnDataSource, HoverTool, PrintfTickFormatter
 from bokeh.layouts import row 
 import pandas
 from bokeh.io import curdoc
@@ -16,23 +17,39 @@ listCategory = list(df.Category.unique())
 def vBarGraphic(df, categoricalVariable, filterCategorical, filterCategoricalValue, numericalVariable, numberToShow):
     df.dropna(subset = [numericalVariable], inplace=True)
     finalDf = df[df[filterCategorical]==filterCategoricalValue].sort_values(by=numericalVariable,ascending=False).head(numberToShow)
-    xData = finalDf[categoricalVariable].tolist()
-    yData = finalDf[numericalVariable].tolist()
-    p = figure(x_range=xData, plot_height=300)
-    p.vbar(x=xData, width=0.5, bottom=0,
-       top=yData, color="firebrick")
-    curdoc().add_root(row(p, name='plotrow'))
+    source = ColumnDataSource(finalDf)    
+    hover = HoverTool()
+    hover_tool = HoverTool(tooltips=[('Name', '@App'), ('Rating', '@Rating')])
+    hover.tooltips = """
+        <div>
+            <h3>@App</h3>
+            <div><strong>Value: </strong> @Rating </div>
+        </div>
+    """
+    p = figure(x_range=source.data['App'].tolist() , plot_height=300)
+    p.vbar(x=categoricalVariable, width=0.5, bottom=0, 
+    top=numericalVariable, color="firebrick", source = source)
+    p.add_tools(hover)
     return p
 # Function making the second graphic
 def vBarGraphic2(df, categoricalVariable, filterCategorical, filterCategoricalValue):
     dfCategory = df[df[filterCategorical]==filterCategoricalValue]
-    typByCategoryDF = dfCategory.groupby(categoricalVariable)[filterCategorical].value_counts().to_frame()
-    listaIndex = [i[0] for i in typByCategoryDF.index.values.tolist()]
-    xData = listaIndex
-    yData = list(typByCategoryDF['Category'])
-    p = figure(x_range=xData, plot_height=300)
-    p.vbar(x=xData, width=0.5, bottom=0,
-       top=yData)
+    typByCategoryDF = dfCategory.groupby(categoricalVariable)[categoricalVariable].value_counts().to_frame()
+    typByCategoryDF['values'] = typByCategoryDF.index
+    typByCategoryDF['values']  = [i[0] for i in typByCategoryDF['values'].tolist()]
+    source = ColumnDataSource(typByCategoryDF)
+    hover = HoverTool()
+    hover.tooltips = """
+        <div>
+            <h3>@values</h3>
+            <div><strong>Value: </strong> @Type </div>
+        </div>
+    """
+    hover_tool = HoverTool(tooltips=[('Category', '@values'), ('Count', '@Type')])
+    p = figure(x_range=source.data['values'].tolist() , plot_height=300)
+    p.vbar(x='values', width=0.5, bottom=0,
+        top='Type', source = source)
+    p.add_tools(hover)
     return p
 # Initializating the app
 app = Flask(__name__)

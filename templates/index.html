@@ -2,9 +2,18 @@
 
 {% block content %}
     {% include 'navbar.html' %}
+<div class="row">
+    <div class="column">
+        {{ div_chart3 | safe }}
+        {{ script_chart3 | safe }}
+    </div>
+        <div class="column">
         {{ div_chart | safe }}
         {{ script_chart | safe }}
-
+        </div>
+</div>
+<div class="myDiv">
         {{ div_chart2 | safe }}
         {{ script_chart2 | safe }}
+</div>
 {% endblock %}
